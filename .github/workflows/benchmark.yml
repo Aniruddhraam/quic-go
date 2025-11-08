@@ -1,8 +1,6 @@
 name: Benchmarks
-
 permissions:
   contents: read
-
 on:
   push:
     branches:
@@ -11,13 +9,12 @@ on:
   # `workflow_dispatch` allows CodSpeed to trigger backtest
   # performance analysis in order to generate initial data.
   workflow_dispatch:
-
 jobs:
-  list-packages:
-    name: List Go packages with benchmarks
+  list-benchmarks:
+    name: List benchmarks
     runs-on: ubuntu-latest
     outputs:
-      packages: ${{ steps.list.outputs.packages }}
+      benchmarks: ${{ steps.list.outputs.benchmarks }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-go@v6
@@ -28,22 +25,25 @@ jobs:
       - id: list
         run: |
           all_pkgs=$(go list ./...)
-          pkgs_with_bench=()
+          benches=()
           for pkg in $all_pkgs; do
-            if go test -list '^Benchmark' "$pkg" | grep -q '^Benchmark'; then
-              pkgs_with_bench+=("$pkg")
+            bench_list=$(go test -list '^Benchmark' "$pkg" | grep '^Benchmark' || true)
+            if [ -n "$bench_list" ]; then
+              while IFS= read -r bench; do
+                benches+=("$pkg:$bench")
+              done <<< "$bench_list"
             fi
           done
-          json=$(printf '%s\n' "${pkgs_with_bench[@]}" | jq -c -R -s 'split("\n") | del(.[] | select(. == ""))')
-          echo "packages=$json" >> $GITHUB_OUTPUT
+          json=$(printf '%s\n' "${benches[@]}" | jq -c -R -s 'split("\n")[:-1] | map( split(":") | {package: .[0], bench: .[1], short: (.[0] | gsub("^github.com/quic-go/quic-go/"; "") | if . == "" then "." else . end)} )')
+          echo "benchmarks=$json" >> $GITHUB_OUTPUT
 
   benchmarks:
-    name: Benchmarks (${{ matrix.package }})
-    needs: list-packages
+    name: Run ${{ matrix.bench.bench }} (${{ matrix.bench.short }})
+    needs: list-benchmarks
     runs-on: codspeed-macro
     strategy:
       matrix:
-        package: ${{ fromJson(needs.list-packages.outputs.packages) }}
+        bench: ${{ fromJson(needs.list-benchmarks.outputs.benchmarks) }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-go@v6
@@ -53,5 +53,5 @@ jobs:
         uses: CodSpeedHQ/action@v4
         with:
           mode: walltime
-          run: go test -run=^$ -bench=. ${{ matrix.package }}
+          run: go test -run=^$ -bench='^${{ matrix.bench.bench }}$' ${{ matrix.bench.package }}
           token: ${{ secrets.CODSPEED_TOKEN }}
