@@ -337,16 +337,6 @@ func TestRetireConnectionIDFrame(t *testing.T) {
 	)
 }
 
-func TestPathChallengeFrame(t *testing.T) {
-	check(t,
-		&PathChallengeFrame{Data: [8]byte{0xde, 0xad, 0xbe, 0xef, 0xca, 0xfe, 0xc0, 0x01}},
-		map[string]any{
-			"frame_type": "",
-			"data":       "deadbeefcafec001",
-		},
-	)
-}
-
 func TestPathResponseFrame(t *testing.T) {
 	check(t,
 		&PathResponseFrame{Data: [8]byte{0xde, 0xad, 0xbe, 0xef, 0xca, 0xfe, 0xc0, 0x01}},

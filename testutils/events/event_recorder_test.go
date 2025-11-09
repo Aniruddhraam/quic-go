@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/quic-go/quic-go/internal/synctest"
 	"github.com/quic-go/quic-go/qlog"
 	"github.com/quic-go/quic-go/qlogwriter"
 	"github.com/stretchr/testify/require"
@@ -81,21 +80,21 @@ func TestRecorderFilterEventsSameName(t *testing.T) {
 }
 
 func TestRecorderEventsWithTime(t *testing.T) {
-	synctest.Test(t, func(t *testing.T) {
-		recorder := &Recorder{}
-		start := time.Now()
-		recorder.RecordEvent(qlog.MTUUpdated{Value: 1000})
-		time.Sleep(time.Minute)
-		recorder.RecordEvent(qlog.ECNStateUpdated{State: qlog.ECNStateCapable})
-		time.Sleep(time.Minute)
-		recorder.RecordEvent(qlog.MTUUpdated{Value: 1200})
 
-		require.Equal(t,
-			[]Event{
-				{Time: start, Event: qlog.MTUUpdated{Value: 1000}},
-				{Time: start.Add(2 * time.Minute), Event: qlog.MTUUpdated{Value: 1200}},
-			},
-			recorder.EventsWithTime(qlog.MTUUpdated{}),
-		)
-	})
+	recorder := &Recorder{}
+	start := time.Now()
+	recorder.RecordEvent(qlog.MTUUpdated{Value: 1000})
+	time.Sleep(time.Minute)
+	recorder.RecordEvent(qlog.ECNStateUpdated{State: qlog.ECNStateCapable})
+	time.Sleep(time.Minute)
+	recorder.RecordEvent(qlog.MTUUpdated{Value: 1200})
+
+	require.Equal(t,
+		[]Event{
+			{Time: start, Event: qlog.MTUUpdated{Value: 1000}},
+			{Time: start.Add(2 * time.Minute), Event: qlog.MTUUpdated{Value: 1200}},
+		},
+		recorder.EventsWithTime(qlog.MTUUpdated{}),
+	)
+	
 }

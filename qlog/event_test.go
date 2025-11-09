@@ -9,7 +9,6 @@ import (
 
 	"github.com/quic-go/quic-go/internal/protocol"
 	"github.com/quic-go/quic-go/internal/qerr"
-	"github.com/quic-go/quic-go/internal/synctest"
 	"github.com/quic-go/quic-go/internal/utils"
 	"github.com/quic-go/quic-go/internal/wire"
 	"github.com/quic-go/quic-go/qlogwriter"
@@ -21,22 +20,19 @@ func testEventEncoding(t *testing.T, ev qlogwriter.Event) (string, map[string]an
 	t.Helper()
 	var buf bytes.Buffer
 
-	synctest.Test(t, func(t *testing.T) {
-		tr := qlogwriter.NewConnectionFileSeq(
-			nopWriteCloser(&buf),
-			true,
-			protocol.ParseConnectionID([]byte{1, 2, 3, 4}),
-			[]string{EventSchema},
-		)
-		go tr.Run()
-		producer := tr.AddProducer()
+	tr := qlogwriter.NewConnectionFileSeq(
+		nopWriteCloser(&buf),
+		true,
+		protocol.ParseConnectionID([]byte{1, 2, 3, 4}),
+		[]string{EventSchema},
+	)
+	go tr.Run()
+	producer := tr.AddProducer()
 
-		synctest.Wait()
-		time.Sleep(42 * time.Second)
+	time.Sleep(42 * time.Second)
 
-		producer.RecordEvent(ev)
-		producer.Close()
-	})
+	producer.RecordEvent(ev)
+	producer.Close()
 
 	return decode(t, buf.String())
 }
@@ -752,38 +748,37 @@ func TestKeyDiscarded(t *testing.T) {
 }
 
 func TestLossTimerUpdated(t *testing.T) {
-	synctest.Test(t, func(t *testing.T) {
-		var buf bytes.Buffer
-		tr := qlogwriter.NewConnectionFileSeq(
-			nopWriteCloser(&buf),
-			true,
-			protocol.ParseConnectionID([]byte{1, 2, 3, 4}),
-			[]string{EventSchema},
-		)
-		go tr.Run()
-		producer := tr.AddProducer()
 
-		synctest.Wait()
-		time.Sleep(42 * time.Second)
+	var buf bytes.Buffer
+	tr := qlogwriter.NewConnectionFileSeq(
+		nopWriteCloser(&buf),
+		true,
+		protocol.ParseConnectionID([]byte{1, 2, 3, 4}),
+		[]string{EventSchema},
+	)
+	go tr.Run()
+	producer := tr.AddProducer()
 
-		producer.RecordEvent(&LossTimerUpdated{
-			Type:      LossTimerUpdateTypeSet,
-			TimerType: TimerTypePTO,
-			EncLevel:  protocol.EncryptionHandshake,
-			Time:      time.Now().Add(1337 * time.Second),
-		})
-		producer.Close()
+	time.Sleep(42 * time.Second)
 
-		name, ev := decode(t, buf.String())
-		require.Equal(t, "recovery:loss_timer_updated", name)
-		require.Len(t, ev, 4)
-		require.Equal(t, "set", ev["event_type"])
-		require.Equal(t, "pto", ev["timer_type"])
-		require.Equal(t, "handshake", ev["packet_number_space"])
-		require.Contains(t, ev, "delta")
-		delta := time.Duration(ev["delta"].(float64)*1e6) * time.Nanosecond
-		require.Equal(t, 1337*time.Second, delta)
+	producer.RecordEvent(&LossTimerUpdated{
+		Type:      LossTimerUpdateTypeSet,
+		TimerType: TimerTypePTO,
+		EncLevel:  protocol.EncryptionHandshake,
+		Time:      time.Now().Add(1337 * time.Second),
 	})
+	producer.Close()
+
+	name, ev := decode(t, buf.String())
+	require.Equal(t, "recovery:loss_timer_updated", name)
+	require.Len(t, ev, 4)
+	require.Equal(t, "set", ev["event_type"])
+	require.Equal(t, "pto", ev["timer_type"])
+	require.Equal(t, "handshake", ev["packet_number_space"])
+	require.Contains(t, ev, "delta")
+	delta := time.Duration(ev["delta"].(float64)*1e6) * time.Nanosecond
+	require.Equal(t, 1337*time.Second, delta)
+	
 }
 
 func TestLossTimerUpdatedExpired(t *testing.T) {

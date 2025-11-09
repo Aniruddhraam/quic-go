@@ -4,8 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/quic-go/quic-go/internal/synctest"
-
 	"github.com/stretchr/testify/require"
 )
 
@@ -28,26 +26,25 @@ func TestTimeRelations(t *testing.T) {
 }
 
 func TestSince(t *testing.T) {
-	synctest.Test(t, func(t *testing.T) {
-		t1 := Now()
-		time.Sleep(time.Second)
-		require.Equal(t, Since(t1), time.Second)
-		require.Equal(t, Now().Sub(t1), time.Second)
-		time.Sleep(time.Minute)
-		require.Equal(t, Since(t1), time.Minute+time.Second)
-		require.Equal(t, Now().Sub(t1), time.Minute+time.Second)
-	})
+	t1 := Now()
+	time.Sleep(time.Second)
+	require.Equal(t, Since(t1), time.Second)
+	require.Equal(t, Now().Sub(t1), time.Second)
+	time.Sleep(time.Minute)
+	require.Equal(t, Since(t1), time.Minute+time.Second)
+	require.Equal(t, Now().Sub(t1), time.Minute+time.Second)
+
 }
 
 func TestUntil(t *testing.T) {
-	synctest.Test(t, func(t *testing.T) {
-		t1 := Now().Add(time.Minute)
-		require.Equal(t, Until(t1), time.Minute)
-		require.Equal(t, t1.Sub(Now()), time.Minute)
-		time.Sleep(15 * time.Second)
-		require.Equal(t, Until(t1), 45*time.Second)
-		require.Equal(t, t1.Sub(Now()), 45*time.Second)
-	})
+
+	t1 := Now().Add(time.Minute)
+	require.Equal(t, Until(t1), time.Minute)
+	require.Equal(t, t1.Sub(Now()), time.Minute)
+	time.Sleep(15 * time.Second)
+	require.Equal(t, Until(t1), 45*time.Second)
+	require.Equal(t, t1.Sub(Now()), 45*time.Second)
+	
 }
 
 func TestConversions(t *testing.T) {
