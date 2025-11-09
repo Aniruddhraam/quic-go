@@ -32,8 +32,6 @@ type (
 	NewConnectionIDFrame = wire.NewConnectionIDFrame
 	// A NewTokenFrame is a NEW_TOKEN frame.
 	NewTokenFrame = wire.NewTokenFrame
-	// A PathChallengeFrame is a PATH_CHALLENGE frame.
-	PathChallengeFrame = wire.PathChallengeFrame
 	// A PathResponseFrame is a PATH_RESPONSE frame.
 	PathResponseFrame = wire.PathResponseFrame
 	// A PingFrame is a PING frame.
@@ -119,8 +117,6 @@ func (f Frame) Encode(enc *jsontext.Encoder) error {
 		return encodeNewConnectionIDFrame(enc, frame)
 	case *RetireConnectionIDFrame:
 		return encodeRetireConnectionIDFrame(enc, frame)
-	case *PathChallengeFrame:
-		return encodePathChallengeFrame(enc, frame)
 	case *PathResponseFrame:
 		return encodePathResponseFrame(enc, frame)
 	case *ConnectionCloseFrame:
@@ -381,17 +377,6 @@ func encodeRetireConnectionIDFrame(enc *jsontext.Encoder, f *RetireConnectionIDF
 	h.WriteToken(jsontext.String("retire_connection_id"))
 	h.WriteToken(jsontext.String("sequence_number"))
 	h.WriteToken(jsontext.Uint(f.SequenceNumber))
-	h.WriteToken(jsontext.EndObject)
-	return h.err
-}
-
-func encodePathChallengeFrame(enc *jsontext.Encoder, f *PathChallengeFrame) error {
-	h := encoderHelper{enc: enc}
-	h.WriteToken(jsontext.BeginObject)
-	h.WriteToken(jsontext.String("frame_type"))
-	h.WriteToken(jsontext.String("path_challenge"))
-	h.WriteToken(jsontext.String("data"))
-	h.WriteToken(jsontext.String(hex.EncodeToString(f.Data[:])))
 	h.WriteToken(jsontext.EndObject)
 	return h.err
 }

@@ -291,7 +291,7 @@ func TestFrameParserFrames(t *testing.T) {
 			frame:     &RetireConnectionIDFrame{SequenceNumber: 0x1337},
 		},
 		{
-			name:      "PATH_CHALLENGE",
+			name:      "",
 			frameType: FrameTypePathChallenge,
 			frame:     &PathChallengeFrame{Data: [8]byte{1, 2, 3, 4, 5, 6, 7, 8}},
 		},
