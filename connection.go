@@ -1893,15 +1893,8 @@ func (c *Conn) handleFrame(
 	case *wire.StopSendingFrame:
 		err = c.streamsMap.HandleStopSendingFrame(frame)
 	case *wire.PingFrame:
-	case *wire.PathChallengeFrame:
-		c.handlePathChallengeFrame(frame)
-		pathChallenge = frame
-	case *wire.PathResponseFrame:
-		err = c.handlePathResponseFrame(frame)
 	case *wire.NewTokenFrame:
 		err = c.handleNewTokenFrame(frame)
-	case *wire.NewConnectionIDFrame:
-		err = c.connIDManager.Add(frame)
 	case *wire.RetireConnectionIDFrame:
 		err = c.connIDGenerator.Retire(frame.SequenceNumber, destConnID, rcvTime.Add(3*c.rttStats.PTO(false)))
 	case *wire.HandshakeDoneFrame:
