@@ -6,8 +6,6 @@ import (
 	"net"
 	"testing"
 	"time"
-
-	"github.com/quic-go/quic-go/internal/synctest"
 )
 
 type testRouter struct {

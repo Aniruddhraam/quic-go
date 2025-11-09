@@ -700,9 +700,8 @@ func (p *packetPacker) composeNextPacket(
 				continue
 			}
 			switch pl.frames[i].Frame.(type) {
-			case *wire.PathChallengeFrame, *wire.PathResponseFrame:
-				// Path probing is currently not supported, therefore we don't need to set the OnAcked callback yet.
-				// PATH_CHALLENGE and PATH_RESPONSE are never retransmitted.
+			// Path probing is currently not supported, therefore we don't need to set the OnAcked callback yet.
+			// PATH_CHALLENGE and PATH_RESPONSE are never retransmitted.
 			default:
 				// we might be packing a 0-RTT packet, but we need to use the 1-RTT ack handler anyway
 				pl.frames[i].Handler = p.retransmissionQueue.AckHandler(protocol.Encryption1RTT)

@@ -1895,8 +1895,6 @@ func (c *Conn) handleFrame(
 	case *wire.PingFrame:
 	case *wire.NewTokenFrame:
 		err = c.handleNewTokenFrame(frame)
-	case *wire.RetireConnectionIDFrame:
-		err = c.connIDGenerator.Retire(frame.SequenceNumber, destConnID, rcvTime.Add(3*c.rttStats.PTO(false)))
 	case *wire.HandshakeDoneFrame:
 		err = c.handleHandshakeDoneFrame(rcvTime)
 	default:
@@ -1992,47 +1990,6 @@ func (c *Conn) handleHandshakeEvents(now monotime.Time) error {
 			return err
 		}
 	}
-}
-
-func (c *Conn) handlePathChallengeFrame(f *wire.PathChallengeFrame) {
-	if c.perspective == protocol.PerspectiveClient {
-		c.queueControlFrame(&wire.PathResponseFrame{Data: f.Data})
-	}
-}
-
-func (c *Conn) handlePathResponseFrame(f *wire.PathResponseFrame) error {
-	switch c.perspective {
-	case protocol.PerspectiveClient:
-		return c.handlePathResponseFrameClient(f)
-	case protocol.PerspectiveServer:
-		return c.handlePathResponseFrameServer(f)
-	default:
-		panic("unreachable")
-	}
-}
-
-func (c *Conn) handlePathResponseFrameClient(f *wire.PathResponseFrame) error {
-	pm := c.pathManagerOutgoing.Load()
-	if pm == nil {
-		return &qerr.TransportError{
-			ErrorCode:    qerr.ProtocolViolation,
-			ErrorMessage: "unexpected PATH_RESPONSE frame",
-		}
-	}
-	pm.HandlePathResponseFrame(f)
-	return nil
-}
-
-func (c *Conn) handlePathResponseFrameServer(f *wire.PathResponseFrame) error {
-	if c.pathManager == nil {
-		// since we didn't send PATH_CHALLENGEs yet, we don't expect PATH_RESPONSEs
-		return &qerr.TransportError{
-			ErrorCode:    qerr.ProtocolViolation,
-			ErrorMessage: "unexpected PATH_RESPONSE frame",
-		}
-	}
-	c.pathManager.HandlePathResponseFrame(f)
-	return nil
 }
 
 func (c *Conn) handleNewTokenFrame(frame *wire.NewTokenFrame) error {

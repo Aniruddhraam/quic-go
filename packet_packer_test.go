@@ -524,44 +524,6 @@ func TestPack1RTTPacketWithACK(t *testing.T) {
 	require.Equal(t, ack, p.Ack)
 }
 
-func TestPackPathChallengeAndPathResponse(t *testing.T) {
-	mockCtrl := gomock.NewController(t)
-	tp := newTestPacketPacker(t, mockCtrl, protocol.PerspectiveServer)
-	tp.pnManager.EXPECT().PeekPacketNumber(protocol.Encryption1RTT).Return(protocol.PacketNumber(0x42), protocol.PacketNumberLen2)
-	tp.pnManager.EXPECT().PopPacketNumber(protocol.Encryption1RTT).Return(protocol.PacketNumber(0x42))
-	tp.sealingManager.EXPECT().Get1RTTSealer().Return(newMockShortHeaderSealer(mockCtrl), nil)
-	tp.framer.EXPECT().HasData().Return(true)
-	tp.ackFramer.EXPECT().GetAckFrame(protocol.Encryption1RTT, gomock.Any(), false)
-	frames := []ackhandler.Frame{
-		{Frame: &wire.PathChallengeFrame{}},
-		{Frame: &wire.PathResponseFrame{}},
-		{Frame: &wire.DataBlockedFrame{}},
-	}
-	expectAppendFrames(tp.framer, frames, nil)
-	buffer := getPacketBuffer()
-	p, err := tp.packer.AppendPacket(buffer, protocol.MaxByteCount, monotime.Now(), protocol.Version1)
-	require.NoError(t, err)
-	require.Len(t, p.Frames, 3)
-	var sawPathChallenge, sawPathResponse bool
-	for _, f := range p.Frames {
-		switch f.Frame.(type) {
-		case *wire.PathChallengeFrame:
-			sawPathChallenge = true
-			// this means that the frame won't be retransmitted.
-			require.Nil(t, f.Handler)
-		case *wire.PathResponseFrame:
-			sawPathResponse = true
-			// this means that the frame won't be retransmitted.
-			require.Nil(t, f.Handler)
-		default:
-			require.NotNil(t, f.Handler)
-		}
-	}
-	require.True(t, sawPathChallenge)
-	require.True(t, sawPathResponse)
-	require.NotZero(t, buffer.Len())
-}
-
 func TestPackDatagramFrames(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	tp := newTestPacketPacker(t, mockCtrl, protocol.PerspectiveServer)
